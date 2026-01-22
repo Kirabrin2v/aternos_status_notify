@@ -14,7 +14,7 @@ SERVER_STARTING_PATTERN = re.compile(
 	r"This server is currently starting\.\n"
 	r"Get this server more RAM for free! > craft\.link/ram"
 )
-print(type(event_bus))
+
 class MinecraftServer:
 	"""Объект сервера."""
 

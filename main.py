@@ -34,7 +34,6 @@ async def post_init(app: "Application"):
 
 if __name__ == "__main__":
     load_dotenv()
-    print(type(event_bus))
 
     server = MinecraftServer(host=SERVER_HOST, port=SERVER_PORT)
 
