@@ -1,9 +1,14 @@
+import logging
 import time
 from typing import Any, Callable
 
 from config import SERVER_HOST, SERVER_PORT, TG_CHAT_ID
 from event_bus import event_bus
+from logging_config import setup_logging
 
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 last_starting_notify_time = 0
 
@@ -30,11 +35,13 @@ def filter_address(host: str, port: int | None) -> Callable[Callable, Callable]:
 @filter_address(host=SERVER_HOST, port=SERVER_PORT)
 async def notify_server_on(address: str):
     """Оповещает о включении сервера."""
+    logger.debug("Событие получено: сервер включился")
     await event_bus.publish("need_send_message", TG_CHAT_ID, f"✅ Сервер {address} запустился!")
 
 @filter_address(host=SERVER_HOST, port=SERVER_PORT)
 async def notify_server_off(address: str):
     """Оповещает о выключении сервера."""
+    logger.debug("Событие получено: сервер выключился")
     await event_bus.publish("need_send_message", TG_CHAT_ID, f"❌ Сервер {address} выключился!")
 
 @filter_address(host=SERVER_HOST, port=SERVER_PORT)
@@ -46,6 +53,8 @@ async def notify_server_starting(address: str, left_minutes: int):
         address (str): Строка вида host:port или host.
     """
     global last_starting_notify_time
+
+    logger.debug("Событие получено: сервер запускается")
 
     is_notify_minute = left_minutes % 5 == 0 or left_minutes == 1
     cooldown_passed = time.time() - last_starting_notify_time > 60

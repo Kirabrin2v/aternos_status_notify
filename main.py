@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 
@@ -10,8 +11,14 @@ from config import SERVER_HOST, SERVER_PORT, TG_CHAT_ID
 from event_bus import event_bus
 from handlers.commands import check_server_handler
 from handlers.notify import notify_server_on, notify_server_off, notify_server_starting
+from logging_config import setup_logging
 from minecraft_connector import MinecraftServer
 
+
+setup_logging()
+
+logger = logging.getLogger(__name__)
+logger.info("Приложение запущено")
 
 async def send_message(chat_id: int, text: str):
     """
@@ -50,5 +57,7 @@ if __name__ == "__main__":
     event_bus.subscribe("server_starting", notify_server_starting)
 
     app.add_handler(check_server_handler)
+
+    logger.info("Приложение инициализировано")
 
     app.run_polling()

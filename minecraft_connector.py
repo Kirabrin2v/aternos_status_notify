@@ -1,9 +1,14 @@
 import asyncio
+import logging
 import re
 from mcstatus import JavaServer
 
 from event_bus import event_bus
+from logging_config import setup_logging
 
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 QUEUE_WAIT_PATTERN = re.compile(
     r"This server is currently waiting in queue\.\n"
@@ -29,16 +34,21 @@ class MinecraftServer:
 		self.reset()
 		self._task: asyncio.Task | None = None
 
+		logger.debug(f"Объект {self.address} инициализирован")
+
 	async def start_monitor(self):
 		"""Запускает бесконечный цикл актуализации полей."""
 		if self._task is None:
 			self._task = asyncio.create_task(self._loop())
+
+			logger.info(f"Запущен цикл для {self.address}")
 
 	async def stop_monitor(self):
 		"""Останавливает бесконечный цикл актуализации полей."""
 		if self._task:
 			self._task.cancel()
 			self._task = None
+			logger.info(f"Остановлен цикл для {self.address}")
 
 	async def _loop(self):
 		"""Актуализирует значения полей с определённым периодом."""
@@ -55,16 +65,11 @@ class MinecraftServer:
 		try:
 			server_info = await self.get_info()
 			if server_info != {}:
-				# print("\n\n_________________________________________")
-				# print([server_info.motd.to_plain()])
-				# print([server_info.version.name])
-				# print(server_info.players)
-				# print("-----------------------------------------\n\n")
-
 				queue_wait_match = QUEUE_WAIT_PATTERN.fullmatch(server_info.motd.to_plain())
 				server_starting_match = SERVER_STARTING_PATTERN.fullmatch(server_info.motd.to_plain())
 				if queue_wait_match or server_starting_match:
-					print("Событие ожидания опубликовано")
+					logger.debug(f"Сервер {self.address} запускается")
+
 					if queue_wait_match:
 						left_minutes = int(queue_wait_match[1])
 					else:
@@ -88,20 +93,21 @@ class MinecraftServer:
 			else:
 				await self.set_server_off()
 
-		except Exception as e:
-			print(e)
+		except Exception:
+			logger.exception("Ошибка при актуализации данных")
 
 	async def set_server_off(self):
 		"""Обновляет статус на выключенный"""
-		print(f"Сервер {self.address} выключен")
+		logger.debug(f"Сервер {self.address} выключен")
 		if self.is_online == True:
 			await event_bus.publish("server_off", self.address)
+
 		self.is_online = False
 		self.reset()
 
 	async def set_server_on(self):
 		"""Обновляет статус на включённый"""
-		print("Сервер включён")
+		logger.debug("Сервер включён")
 		if self.is_online == False:
 			await event_bus.publish("server_on", self.address)
 		self.is_online = True
@@ -132,14 +138,3 @@ class MinecraftServer:
 			return self.client.status()
 		except Exception:
 			return {}
-
-	@property
-	async def check_online(self) -> bool:
-		"""
-		Проверяет, включён ли сервер.
-		
-		Returns:
-			bool
-		"""
-		server_info = await get_info()
-		return server_info != {}

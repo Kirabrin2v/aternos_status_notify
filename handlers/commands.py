@@ -1,8 +1,14 @@
+import logging
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 
 from config import SERVER_HOST, SERVER_PORT
+from logging_config import setup_logging
 from minecraft_connector import MinecraftServer
+
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 
 def format_server_info(
@@ -76,7 +82,11 @@ async def check_server_info(
 ):
 	"""Отправляет пользователю информацию о сервере."""
 	message = update.message
+	chat_id = update.effective_chat.id
+
 	args = context.args
+
+	logger.info(f"{chat_id}: {message.text}")
 
 	host, port = parse_host_and_port(args)
 	is_use_default_host = False
