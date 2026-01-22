@@ -59,5 +59,5 @@ async def notify_server_starting(address: str, left_minutes: int):
         await event_bus.publish(
             "need_send_message",
             TG_CHAT_ID,
-            answ
+            text
         )
